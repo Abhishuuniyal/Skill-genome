@@ -8,35 +8,37 @@ const pdf = require("pdf-parse");
 
 const router = express.Router();
 
-// ✅ SIMPLE MULTER (NO FILE FILTER BUG)
 const upload = multer({
   dest: "uploads/",
-  limits: { fileSize: 5 * 1024 * 1024 } // 5MB limit
+  limits: { fileSize: 5 * 1024 * 1024 }
 });
 
 router.post("/upload", upload.single("resume"), async (req, res) => {
   try {
     console.log("📥 Upload request received");
-    console.log("FILE:", req.file); // 🔥 DEBUG
 
     if (!req.file) {
       return res.status(400).json({ error: "No file uploaded" });
     }
 
-    // read file
-    const buffer = fs.readFileSync(req.file.path);
-    const data = await pdf(buffer);
+    let text = "";
 
-    let text = data.text.toLowerCase();
+    try {
+      const buffer = fs.readFileSync(req.file.path);
+      const data = await pdf(buffer);
+      text = data.text.toLowerCase();
+    } catch (pdfError) {
+      console.log("⚠️ PDF PARSE ERROR:", pdfError);
+      return res.status(500).json({
+        error: "Failed to read PDF"
+      });
+    }
 
     let score = 50;
     let strengths = [];
     let missingSkills = [];
     let improvements = [];
 
-    // ==========================
-    // SKILLS LIST
-    // ==========================
     const skills = [
       "javascript", "react", "node", "mongodb",
       "java", "python", "c++", "sql",
@@ -46,75 +48,29 @@ router.post("/upload", upload.single("resume"), async (req, res) => {
     const foundSkills = skills.filter(skill => text.includes(skill));
     score += foundSkills.length * 4;
 
-    // ==========================
-    // STRENGTHS
-    // ==========================
-    if (text.includes("project")) {
-      strengths.push("You have mentioned projects.");
-    }
+    // strengths
+    if (text.includes("project")) strengths.push("Projects found");
+    if (text.includes("intern")) strengths.push("Internship found");
+    if (text.includes("github")) strengths.push("GitHub present");
 
-    if (text.includes("intern")) {
-      strengths.push("Internship experience found.");
-    }
+    // missing
+    if (!text.includes("docker")) missingSkills.push("Docker missing");
+    if (!text.includes("aws")) missingSkills.push("AWS missing");
 
-    if (text.includes("github")) {
-      strengths.push("GitHub profile detected.");
-    }
+    // improvements
+    if (!text.includes("summary")) improvements.push("Add summary");
+    if (!text.includes("experience")) improvements.push("Add experience");
 
-    if (foundSkills.length > 5) {
-      strengths.push("Strong technical skillset.");
-    }
-
-    // ==========================
-    // MISSING SKILLS
-    // ==========================
-    if (!text.includes("docker")) {
-      missingSkills.push("Docker missing");
-    }
-
-    if (!text.includes("aws")) {
-      missingSkills.push("AWS missing");
-    }
-
-    if (!text.includes("system design")) {
-      missingSkills.push("System Design missing");
-    }
-
-    if (!text.includes("ci/cd")) {
-      missingSkills.push("CI/CD missing");
-    }
-
-    if (!text.includes("testing")) {
-      missingSkills.push("Testing missing");
-    }
-
-    // ==========================
-    // IMPROVEMENTS
-    // ==========================
-    if (!text.includes("summary")) {
-      improvements.push("Add professional summary");
-    }
-
-    if (!text.includes("achievement")) {
-      improvements.push("Add achievements");
-    }
-
-    if (!text.includes("experience")) {
-      improvements.push("Add experience");
-    }
-
-    if (text.length < 2000) {
-      improvements.push("Add more detailed content");
-    }
-
-    // max cap
     if (score > 95) score = 95;
 
-    // delete uploaded file
-    fs.unlinkSync(req.file.path);
+    // delete file safely
+    try {
+      fs.unlinkSync(req.file.path);
+    } catch (e) {
+      console.log("File delete error (ignore)");
+    }
 
-    // response
-    res.json({
+    return res.json({
       score,
       strengths,
       missingSkills,
@@ -123,10 +79,10 @@ router.post("/upload", upload.single("resume"), async (req, res) => {
     });
 
   } catch (error) {
-    console.error("🔥 ERROR:", error);
+    console.error("🔥 FULL ERROR:", error);
 
-    res.status(500).json({
-      error: "Resume analysis failed",
+    return res.status(500).json({
+      error: "Server crashed",
       details: error.message
     });
   }
