@@ -10,12 +10,12 @@ export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  // ✅ NORMAL LOGIN (FIXED API)
-  const handleLogin = async (e) => {
+  // ✅ NORMAL LOGIN
+  const handleLogin = async (e: any) => {
     e.preventDefault();
 
     try {
-      const res = await fetch("https://coding-platform-project.onrender.com/api/auth/google", {
+      const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
@@ -41,11 +41,10 @@ export default function Login() {
     }
   };
 
-  // ✅ GOOGLE LOGIN (FULL FIXED)
+  // ✅ GOOGLE LOGIN
   const handleGoogleLogin = async () => {
     const provider = new GoogleAuthProvider();
 
-    // 🔥 FORCE ACCOUNT SELECTION
     provider.setCustomParameters({
       prompt: "select_account"
     });
@@ -56,11 +55,11 @@ export default function Login() {
 
       console.log("USER:", user);
 
-      // Save locally
+      // save locally
       localStorage.setItem("user", JSON.stringify(user));
 
-      // ✅ SAME ORIGIN BACKEND (FIXED)
-      const res = await fetch("http://localhost:8000/api/auth/google", {
+      // ✅ FIXED (NO localhost)
+      const res = await fetch("/api/auth/google", {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
@@ -81,7 +80,7 @@ export default function Login() {
         alert(data.message || "Backend error");
       }
 
-    } catch (error) {
+    } catch (error: any) {
       console.log("FULL GOOGLE ERROR:", error);
       alert(error.message);
     }
