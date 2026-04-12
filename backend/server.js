@@ -1,6 +1,7 @@
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
+import path from "path";
 
 import connectDB from "./config/db.js";
 import authRoutes from "./routes/authRoutes.js";
@@ -11,52 +12,28 @@ dotenv.config();
 
 const app = express();
 
-// ✅ CORS FIX (VERY IMPORTANT)
-app.use(cors({
-  origin: "http://localhost:8080",
-  credentials: true
-}));
-
-// middleware
+app.use(cors());
 app.use(express.json());
 
-// database connect
 connectDB();
 
-// test route
 app.get("/", (req, res) => {
   res.send("Backend Running");
 });
 
-// ✅ ROUTES (ORDER IMPORTANT)
-
-// mock test route
 app.use("/api/mocktest", mockTestRoutes);
-
-// auth routes
 app.use("/api/auth", authRoutes);
-
-// resume routes
 app.use("/api/resume", resumeRoutes);
 
-// google test route
-app.post("/api/auth/google", async (req, res) => {
-  try {
-    const { name, email, photo } = req.body;
+// serve frontend
+app.use(express.static(path.join(process.cwd(), "frontend/dist")));
 
-    console.log("Google user:", name, email);
-
-    return res.json({
-      message: "User saved",
-      user: { name, email, photo }
-    });
-
-  } catch (error) {
-    res.status(500).json({ message: "Server error" });
-  }
+app.get("*", (req, res) => {
+  res.sendFile(path.join(process.cwd(), "frontend/dist/index.html"));
 });
 
-// server start
-app.listen(8000, () => {
-  console.log("🚀 Server running on port 8000");
+const PORT = process.env.PORT || 8000;
+
+app.listen(PORT, () => {
+  console.log(`🚀 Server running on port ${PORT}`);
 });
