@@ -15,7 +15,7 @@ export default function Login() {
     e.preventDefault();
 
     try {
-      const res = await fetch("http://localhost:8000/api/auth/login", {
+      const res = await fetch("https://coding-platform-project.onrender.com/api/auth/google", {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
