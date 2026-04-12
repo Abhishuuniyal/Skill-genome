@@ -8,64 +8,35 @@ const pdf = require("pdf-parse");
 
 const router = express.Router();
 
-// ✅ ensure uploads folder exists (VERY IMPORTANT FOR RENDER)
-const uploadDir = "uploads";
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir);
-}
-
-// ✅ multer config (FIXED)
+// ✅ SIMPLE MULTER (NO FILE FILTER BUG)
 const upload = multer({
   dest: "uploads/",
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
-  fileFilter: (req, file, cb) => {
-    if (
-      file.mimetype === "application/pdf" ||
-      file.mimetype.includes("word")
-    ) {
-      cb(null, true);
-    } else {
-      cb(new Error("Only PDF/DOC allowed"));
-    }
-  }
+  limits: { fileSize: 5 * 1024 * 1024 } // 5MB limit
 });
 
-// ✅ MAIN ROUTE
 router.post("/upload", upload.single("resume"), async (req, res) => {
-  let filePath = "";
-
   try {
     console.log("📥 Upload request received");
-    console.log("FILE:", req.file); // DEBUG
+    console.log("FILE:", req.file); // 🔥 DEBUG
 
     if (!req.file) {
       return res.status(400).json({ error: "No file uploaded" });
     }
 
-    filePath = req.file.path;
+    // read file
+    const buffer = fs.readFileSync(req.file.path);
+    const data = await pdf(buffer);
 
-    const buffer = fs.readFileSync(filePath);
-
-    let data;
-    try {
-      data = await pdf(buffer);
-    } catch (err) {
-      return res.status(400).json({
-        error: "Invalid PDF file"
-      });
-    }
-
-    const text = data.text.toLowerCase();
-
-    // ==========================
-    // SCORING LOGIC
-    // ==========================
+    let text = data.text.toLowerCase();
 
     let score = 50;
     let strengths = [];
     let missingSkills = [];
     let improvements = [];
 
+    // ==========================
+    // SKILLS LIST
+    // ==========================
     const skills = [
       "javascript", "react", "node", "mongodb",
       "java", "python", "c++", "sql",
@@ -75,59 +46,74 @@ router.post("/upload", upload.single("resume"), async (req, res) => {
     const foundSkills = skills.filter(skill => text.includes(skill));
     score += foundSkills.length * 4;
 
-    // strengths
+    // ==========================
+    // STRENGTHS
+    // ==========================
     if (text.includes("project")) {
       strengths.push("You have mentioned projects.");
     }
+
     if (text.includes("intern")) {
-      strengths.push("You have internship experience.");
+      strengths.push("Internship experience found.");
     }
+
     if (text.includes("github")) {
-      strengths.push("You showcase your work via GitHub.");
+      strengths.push("GitHub profile detected.");
     }
+
     if (foundSkills.length > 5) {
       strengths.push("Strong technical skillset.");
     }
 
-    // missing
+    // ==========================
+    // MISSING SKILLS
+    // ==========================
     if (!text.includes("docker")) {
-      missingSkills.push("Learn Docker for deployment.");
+      missingSkills.push("Docker missing");
     }
+
     if (!text.includes("aws")) {
-      missingSkills.push("Learn AWS cloud.");
+      missingSkills.push("AWS missing");
     }
+
     if (!text.includes("system design")) {
-      missingSkills.push("Add System Design knowledge.");
+      missingSkills.push("System Design missing");
     }
+
     if (!text.includes("ci/cd")) {
-      missingSkills.push("CI/CD missing.");
+      missingSkills.push("CI/CD missing");
     }
+
     if (!text.includes("testing")) {
-      missingSkills.push("Add testing practices.");
+      missingSkills.push("Testing missing");
     }
 
-    // improvements
+    // ==========================
+    // IMPROVEMENTS
+    // ==========================
     if (!text.includes("summary")) {
-      improvements.push("Add professional summary.");
-    }
-    if (!text.includes("achievement")) {
-      improvements.push("Add achievements.");
-    }
-    if (!text.includes("experience")) {
-      improvements.push("Add experience section.");
-    }
-    if (text.length < 2000) {
-      improvements.push("Increase content depth.");
+      improvements.push("Add professional summary");
     }
 
+    if (!text.includes("achievement")) {
+      improvements.push("Add achievements");
+    }
+
+    if (!text.includes("experience")) {
+      improvements.push("Add experience");
+    }
+
+    if (text.length < 2000) {
+      improvements.push("Add more detailed content");
+    }
+
+    // max cap
     if (score > 95) score = 95;
 
-    // ✅ delete file
-    if (filePath && fs.existsSync(filePath)) {
-      fs.unlinkSync(filePath);
-    }
+    // delete uploaded file
+    fs.unlinkSync(req.file.path);
 
-    // ✅ response
+    // response
     res.json({
       score,
       strengths,
@@ -138,10 +124,6 @@ router.post("/upload", upload.single("resume"), async (req, res) => {
 
   } catch (error) {
     console.error("🔥 ERROR:", error);
-
-    if (filePath && fs.existsSync(filePath)) {
-      fs.unlinkSync(filePath);
-    }
 
     res.status(500).json({
       error: "Resume analysis failed",
