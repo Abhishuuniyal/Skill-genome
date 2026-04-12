@@ -63,6 +63,35 @@ router.post("/login", async (req, res) => {
   }
 });
 
+
+// ✅🔥 GOOGLE LOGIN ROUTE (MISSING PART — THIS FIXES YOUR ERROR)
+router.post("/google", async (req, res) => {
+  try {
+    const { name, email, photo } = req.body;
+
+    let user = await User.findOne({ email });
+
+    if (!user) {
+      user = new User({
+        name,
+        email,
+        password: "google_auth", // dummy password
+        photo
+      });
+      await user.save();
+    }
+
+    res.json({
+      message: "Google login successful",
+      user
+    });
+
+  } catch (error) {
+    res.status(500).json({ message: "Google login error" });
+  }
+});
+
+
 // 🔥 LeetCode API
 router.get("/leetcode/:username", async (req, res) => {
   const username = req.params.username;
@@ -98,33 +127,8 @@ router.get("/leetcode/:username", async (req, res) => {
   }
 });
 
-router.post("/save-score", async (req, res) => {
-  try {
-    const { leetcodeId, score } = req.body;
 
-    let user = await User.findOne({ leetcodeId });
-
-    if (!user) {
-      user = new User({
-        name: leetcodeId,
-        email: leetcodeId + "@temp.com",
-        password: "123456",
-        leetcodeId,
-        score
-      });
-    } else {
-      user.score = score;
-    }
-
-    await user.save();
-
-    res.json({ message: "Score saved" });
-
-  } catch (error) {
-    res.status(500).json({ message: "Error saving score" });
-  }
-});
-
+// leaderboard
 router.get("/leaderboard", async (req, res) => {
   try {
     const users = await User.find().sort({ score: -1 });

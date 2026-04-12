@@ -12,31 +12,31 @@ dotenv.config();
 
 const app = express();
 
-// ✅ middleware
+// middleware
 app.use(cors());
 app.use(express.json());
 
-// ✅ database connect
+// DB connect
 connectDB();
 
-// ✅ test route (optional)
-app.get("/api/test", (req, res) => {
-  res.json({ message: "Backend Working" });
-});
-
-// ✅ ROUTES
-app.use("/api/mocktest", mockTestRoutes);
+// ✅ API ROUTES FIRST (VERY IMPORTANT)
 app.use("/api/auth", authRoutes);
 app.use("/api/resume", resumeRoutes);
+app.use("/api/mocktest", mockTestRoutes);
 
-// ✅ FRONTEND SERVE (VERY IMPORTANT)
+// test route
+app.get("/api/test", (req, res) => {
+  res.json({ message: "Backend working ✅" });
+});
+
+// ✅ FRONTEND SERVE LAST
 app.use(express.static(path.join(process.cwd(), "frontend/dist")));
 
 app.get("*", (req, res) => {
   res.sendFile(path.join(process.cwd(), "frontend/dist/index.html"));
 });
 
-// ✅ PORT FIX (Render ke liye)
+// port
 const PORT = process.env.PORT || 8000;
 
 app.listen(PORT, () => {
