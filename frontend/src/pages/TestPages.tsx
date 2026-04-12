@@ -9,14 +9,15 @@ export default function TestPage() {
   const [result, setResult] = useState<any>(null);
   const [timeLeft, setTimeLeft] = useState(600); // 10 min
 
-  // 🔥 FETCH TEST
+  // ✅ FETCH TEST (FIXED)
   useEffect(() => {
-    fetch(`http://localhost:8000/api/mocktest/start/${id}`)
+    fetch(`/api/mocktest/start/${id}`)
       .then(res => res.json())
       .then(data => {
         setTest(data);
         setAnswers(new Array(data.questions.length).fill(-1));
-      });
+      })
+      .catch(err => console.log(err));
   }, [id]);
 
   // 🔥 TIMER
@@ -26,7 +27,7 @@ export default function TestPage() {
     const timer = setInterval(() => {
       setTimeLeft(prev => {
         if (prev <= 1) {
-          submit(); // auto submit
+          submit();
           return 0;
         }
         return prev - 1;
@@ -42,21 +43,24 @@ export default function TestPage() {
     setAnswers(newAns);
   };
 
+  // ✅ SUBMIT (FIXED)
   const submit = async () => {
-    const res = await fetch(`http://localhost:8000/api/mocktest/submit/${id}`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({ answers })
-    });
+    try {
+      const res = await fetch(`/api/mocktest/submit/${id}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ answers })
+      });
 
-    const data = await res.json();
+      const data = await res.json();
 
-    // 🔥 SAVE SCORE (LOCAL)
-    localStorage.setItem("lastScore", JSON.stringify(data));
-
-    setResult(data);
+      localStorage.setItem("lastScore", JSON.stringify(data));
+      setResult(data);
+    } catch (error) {
+      console.log("Submit error:", error);
+    }
   };
 
   const formatTime = (t: number) => {
@@ -68,7 +72,7 @@ export default function TestPage() {
   if (!test)
     return <h2 className="p-6 text-white">Loading...</h2>;
 
-  // RESULT
+  // RESULT SCREEN
   if (result) {
     return (
       <div className="min-h-screen bg-[#020617] flex items-center justify-center">
@@ -88,14 +92,13 @@ export default function TestPage() {
   return (
     <div className="min-h-screen bg-[#020617] p-6 flex gap-6">
 
-      {/* 🔥 LEFT - QUESTIONS */}
+      {/* LEFT - QUESTIONS */}
       <div className="flex-1 space-y-6">
 
         {/* HEADER */}
         <div className="flex justify-between items-center">
           <h1 className="text-2xl text-white font-bold">{test.title}</h1>
 
-          {/* TIMER */}
           <div className="bg-black border border-green-500 px-4 py-2 rounded-lg text-green-400 font-bold">
             ⏱ {formatTime(timeLeft)}
           </div>
@@ -142,7 +145,7 @@ export default function TestPage() {
         </button>
       </div>
 
-      {/* 🔥 RIGHT - QUESTION PALETTE */}
+      {/* RIGHT PANEL */}
       <div className="w-48 bg-[#0f172a] border border-green-500/20 rounded-xl p-4 h-fit sticky top-6">
 
         <h3 className="text-white mb-3">Questions</h3>

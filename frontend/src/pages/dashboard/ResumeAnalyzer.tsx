@@ -17,21 +17,24 @@ export default function ResumeAnalyzer() {
     setLoading(true);
 
     try {
-      const res = await fetch("http://localhost:8000/api/resume/upload", {
+      // ✅ FIXED (NO localhost)
+      const res = await fetch("/api/resume/upload", {
         method: "POST",
         body: formData,
       });
 
       if (!res.ok) {
-        alert("Backend error");
+        alert("Backend error ❌");
         setLoading(false);
         return;
       }
 
       const data = await res.json();
       setResult(data);
+
     } catch (err) {
-      alert("Upload failed");
+      console.log("UPLOAD ERROR:", err);
+      alert("Upload failed ❌");
     }
 
     setLoading(false);
@@ -50,8 +53,8 @@ export default function ResumeAnalyzer() {
         </p>
       </div>
 
-      {/* UPLOAD CARD */}
-      <div className="bg-gray-900/80 backdrop-blur-md border border-gray-700 rounded-2xl p-6 shadow-lg">
+      {/* UPLOAD */}
+      <div className="bg-gray-900/80 border border-gray-700 rounded-2xl p-6 shadow-lg">
 
         <label className="flex flex-col items-center justify-center border-2 border-dashed border-green-500 rounded-xl p-6 cursor-pointer hover:bg-green-500/10 transition">
           <span className="text-green-400 text-lg font-semibold">
@@ -87,13 +90,13 @@ export default function ResumeAnalyzer() {
       {result && (
         <div className="mt-10 grid md:grid-cols-2 gap-6">
 
-          {/* SCORE CARD */}
-          <div className="bg-gradient-to-br from-green-900/40 to-black border border-green-500/30 p-6 rounded-2xl shadow-lg">
+          {/* SCORE */}
+          <div className="bg-gradient-to-br from-green-900/40 to-black border border-green-500/30 p-6 rounded-2xl">
             <h2 className="text-xl font-bold text-green-400">ATS Score</h2>
 
             <div className="w-full bg-gray-800 h-4 mt-4 rounded-full overflow-hidden">
               <div
-                className="bg-gradient-to-r from-green-400 to-green-600 h-4 rounded-full transition-all duration-500"
+                className="bg-gradient-to-r from-green-400 to-green-600 h-4"
                 style={{ width: `${result.score || 0}%` }}
               />
             </div>
@@ -101,46 +104,42 @@ export default function ResumeAnalyzer() {
             <p className="mt-3 text-2xl font-bold">
               {result.score}/100
             </p>
-
-            <p className="text-gray-400 mt-2 text-sm">
-              Higher score = better chances of selection
-            </p>
           </div>
 
           {/* STRENGTHS */}
-          <div className="bg-gray-900 border border-green-500/20 p-6 rounded-2xl shadow">
+          <div className="bg-gray-900 border border-green-500/20 p-6 rounded-2xl">
             <h2 className="text-xl font-bold text-green-400 mb-3">
               ✔ Strengths
             </h2>
 
             {result.strengths?.map((s: any, i: number) => (
-              <div key={i} className="mb-2 p-2 rounded bg-green-500/10">
+              <div key={i} className="mb-2 p-2 bg-green-500/10 rounded">
                 {s}
               </div>
             ))}
           </div>
 
-          {/* MISSING SKILLS */}
-          <div className="bg-gray-900 border border-red-500/20 p-6 rounded-2xl shadow">
+          {/* MISSING */}
+          <div className="bg-gray-900 border border-red-500/20 p-6 rounded-2xl">
             <h2 className="text-xl font-bold text-red-400 mb-3">
               ⚠ Missing Skills
             </h2>
 
             {result.missingSkills?.map((m: any, i: number) => (
-              <div key={i} className="mb-2 p-2 rounded bg-red-500/10">
+              <div key={i} className="mb-2 p-2 bg-red-500/10 rounded">
                 {m}
               </div>
             ))}
           </div>
 
           {/* IMPROVEMENTS */}
-          <div className="bg-gray-900 border border-yellow-500/20 p-6 rounded-2xl shadow">
+          <div className="bg-gray-900 border border-yellow-500/20 p-6 rounded-2xl">
             <h2 className="text-xl font-bold text-yellow-400 mb-3">
               💡 Improvements
             </h2>
 
             {result.improvements?.map((imp: any, i: number) => (
-              <div key={i} className="mb-2 p-2 rounded bg-yellow-500/10">
+              <div key={i} className="mb-2 p-2 bg-yellow-500/10 rounded">
                 {imp}
               </div>
             ))}

@@ -2,26 +2,15 @@ import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { useTheme } from "@/lib/theme";
 import {
-  Search,
-  Filter,
-  TrendingUp,
-  Users,
-  Eye,
   Dna,
   Sun,
   Moon,
-  ArrowUpRight,
-  Star,
-  MapPin,
-  Briefcase,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { useEffect, useState } from "react"; // ✅ FIX
-import { onAuthStateChanged } from "firebase/auth"; // ✅ FIX
-import { auth } from "@/lib/firebase"; // ✅ FIX
+import { useEffect, useState } from "react";
+import { onAuthStateChanged } from "firebase/auth";
+import { auth } from "@/lib/firebase";
 
-// ✅ FIX: import upar shift kiya
 import {
   Radar,
   RadarChart,
@@ -34,19 +23,18 @@ export default function CompanyDashboard() {
   const { theme, toggle } = useTheme();
 
   const [users, setUsers] = useState<any[]>([]);
-  const [roleFilter, setRoleFilter] = useState("All Roles");
   const [search, setSearch] = useState("");
 
-  // ✅ FIX: auth listener sahi jagah
+  // ✅ Auth listener
   useEffect(() => {
     onAuthStateChanged(auth, (user) => {
       console.log("Auth user:", user);
     });
   }, []);
 
-  // 🔥 Fetch real users
+  // ✅ FIXED API CALL (NO localhost)
   useEffect(() => {
-    fetch("http://localhost:8000/api/auth/leaderboard")
+    fetch("/api/auth/leaderboard")
       .then((res) => res.json())
       .then((data) => setUsers(data))
       .catch((err) => console.log(err));
@@ -76,7 +64,7 @@ export default function CompanyDashboard() {
     }
   };
 
-  // 🎯 Convert backend users → UI format
+  // 🎯 Convert backend → UI
   const candidates = users.map((u, index) => ({
     id: index,
     name: u.leetcodeId,
@@ -95,14 +83,14 @@ export default function CompanyDashboard() {
     },
   }));
 
-  // 🔍 Filtering
+  // 🔍 Search filter
   const filtered = candidates.filter((c) => {
     if (search && !c.name.toLowerCase().includes(search.toLowerCase()))
       return false;
     return true;
   });
 
-  // 📊 Radar chart
+  // 📊 Radar
   function CandidateRadar({ skills }: any) {
     const data = [
       { skill: "DSA", value: skills.dsa },
@@ -130,6 +118,7 @@ export default function CompanyDashboard() {
 
   return (
     <div className="min-h-screen bg-background">
+      
       {/* HEADER */}
       <header className="border-b border-border bg-card/80 backdrop-blur-xl">
         <div className="container flex items-center justify-between h-16">
@@ -145,25 +134,25 @@ export default function CompanyDashboard() {
       </header>
 
       <div className="container py-8 space-y-6">
+        
         {/* TITLE */}
         <h1 className="text-3xl font-bold">Talent Discovery</h1>
 
         {/* SEARCH */}
-        <div className="flex gap-3">
-          <input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search candidates..."
-            className="p-2 rounded bg-muted flex-1"
-          />
-        </div>
+        <input
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Search candidates..."
+          className="p-2 rounded bg-muted w-full"
+        />
 
         {/* CARDS */}
         <div className="grid lg:grid-cols-2 gap-5">
-          {filtered.map((c, i) => (
+          {filtered.map((c) => (
             <motion.div
               key={c.id}
               className="bg-card border p-5 rounded-xl"
+              whileHover={{ scale: 1.02 }}
             >
               <h3 className="text-lg font-bold">{c.name}</h3>
               <p className="text-sm">{c.role}</p>

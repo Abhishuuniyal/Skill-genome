@@ -1,7 +1,7 @@
 import { motion } from "framer-motion";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 import {
   BarChart,
@@ -25,6 +25,11 @@ export default function Ranking() {
 
   const [filter, setFilter] = useState("global");
   const [selectedLeague, setSelectedLeague] = useState("Beginner");
+
+  // ✅ LOAD LEADERBOARD ON START
+  useEffect(() => {
+    fetchLeaderboard();
+  }, []);
 
   // 🎯 Tier Logic
   const getTier = (score: number) => {
@@ -52,17 +57,21 @@ export default function Ranking() {
   const myRank =
     finalUsers.findIndex((u) => u.leetcodeId === leetcodeId) + 1;
 
+  // ✅ FIXED API
   const fetchLeaderboard = async () => {
-    const res = await fetch("http://localhost:8000/api/auth/leaderboard");
-    const data = await res.json();
-    setLeaderboard(data);
+    try {
+      const res = await fetch("/api/auth/leaderboard");
+      const data = await res.json();
+      setLeaderboard(data);
+    } catch (error) {
+      console.log("Leaderboard error:", error);
+    }
   };
 
+  // ✅ SYNC DATA
   const handleSync = async () => {
     try {
-      const res = await fetch(
-        `http://localhost:8000/api/auth/leetcode/${leetcodeId}`
-      );
+      const res = await fetch(`/api/auth/leetcode/${leetcodeId}`);
       const result = await res.json();
 
       setData(result);
@@ -91,24 +100,25 @@ export default function Ranking() {
 
       setSelectedLeague(getTier(totalScore));
 
-      await fetch("http://localhost:8000/api/auth/save-score", {
+      // ✅ SAVE SCORE
+      await fetch("/api/auth/save-score", {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
+          "Content-Type": "application/json"
         },
         body: JSON.stringify({
           leetcodeId,
-          score: totalScore,
-        }),
+          score: totalScore
+        })
       });
 
       fetchLeaderboard();
+
     } catch (error) {
-      console.log("Error fetching data", error);
+      console.log("Sync error:", error);
     }
   };
 
-  // 🔥 GRAPH DATA
   const chartData = [
     { name: "Easy", value: easy },
     { name: "Medium", value: medium },
@@ -147,7 +157,7 @@ export default function Ranking() {
           <button
             key={f}
             onClick={() => setFilter(f)}
-            className={`px-4 py-1 rounded-full text-sm transition ${
+            className={`px-4 py-1 rounded-full text-sm ${
               filter === f
                 ? "bg-green-500 text-black"
                 : "bg-gray-800 text-gray-300"
@@ -165,7 +175,7 @@ export default function Ranking() {
             <button
               key={tier}
               onClick={() => setSelectedLeague(tier)}
-              className={`px-4 py-1 rounded-full text-sm transition ${
+              className={`px-4 py-1 rounded-full text-sm ${
                 selectedLeague === tier
                   ? "bg-yellow-400 text-black"
                   : "bg-gray-800 text-gray-300"
@@ -182,7 +192,7 @@ export default function Ranking() {
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-gradient-to-br from-[#0f172a] to-[#020617] border border-green-500/20 p-6 rounded-xl shadow-[0_0_25px_rgba(34,197,94,0.15)]"
+          className="bg-[#0f172a] border border-green-500/20 p-6 rounded-xl"
         >
           <h2 className="text-xl font-bold text-green-400 mb-2">
             Your Stats
@@ -203,12 +213,11 @@ export default function Ranking() {
         </motion.div>
       )}
 
-      {/* 🔥 GRAPH */}
+      {/* GRAPH */}
       {data && (
-        <div className="bg-gradient-to-br from-[#0f172a] to-[#020617] border border-green-500/20 p-6 rounded-xl">
-
+        <div className="bg-[#0f172a] border border-green-500/20 p-6 rounded-xl">
           <h2 className="text-lg font-bold text-green-400 mb-4">
-            📊 Performance Analytics
+            📊 Performance
           </h2>
 
           <ResponsiveContainer width="100%" height={250}>
@@ -217,7 +226,6 @@ export default function Ranking() {
               <XAxis dataKey="name" stroke="#9ca3af" />
               <YAxis stroke="#9ca3af" />
               <Tooltip />
-
               <Bar dataKey="value" />
             </BarChart>
           </ResponsiveContainer>
@@ -225,64 +233,32 @@ export default function Ranking() {
       )}
 
       {/* LEADERBOARD */}
-      <div className="bg-gradient-to-br from-[#0f172a] to-[#020617] border border-gray-800 p-6 rounded-xl">
-
+      <div className="bg-[#0f172a] border border-gray-800 p-6 rounded-xl">
         <h2 className="text-xl font-bold text-white mb-4">
-          {selectedLeague} Leaderboard ({filter})
+          {selectedLeague} Leaderboard
         </h2>
 
         {finalUsers.length === 0 ? (
-          <p className="text-gray-400">No users in this category</p>
+          <p className="text-gray-400">No users</p>
         ) : (
-          finalUsers.map((user, index) => {
-            let medal = "";
-            if (index === 0) medal = "🥇";
-            else if (index === 1) medal = "🥈";
-            else if (index === 2) medal = "🥉";
-
-            return (
-              <motion.div
-                key={index}
-                whileHover={{ scale: 1.02 }}
-                className={`flex justify-between items-center p-4 rounded-lg mb-2 ${
-                  index < 3
-                    ? "bg-yellow-500/10 border border-yellow-500/30"
-                    : "bg-[#020617] border border-gray-800"
-                }`}
-              >
-                <span className="flex items-center gap-3 text-white">
-                  <span>{medal || `#${index + 1}`}</span>
-                  <a
-                    href={`/profile/${user.leetcodeId}`}
-                    className="hover:text-green-400"
-                  >
-                    {user.leetcodeId}
-                  </a>
-                </span>
-
-                <span className="font-bold text-green-400">
-                  {user.score}
-                </span>
-              </motion.div>
-            );
-          })
+          finalUsers.map((user, index) => (
+            <div
+              key={index}
+              className="flex justify-between p-3 border-b border-gray-800 text-white"
+            >
+              <span>{index + 1}. {user.leetcodeId}</span>
+              <span className="text-green-400">{user.score}</span>
+            </div>
+          ))
         )}
       </div>
 
-      {/* MY RANK */}
+      {/* RANK */}
       <div className="text-white">
         Your Rank:{" "}
         <span className="text-green-400 font-bold">
           #{myRank > 0 ? myRank : "Not Ranked"}
         </span>
-      </div>
-
-      {/* SCORING */}
-      <div className="bg-[#020617] border border-gray-800 p-4 rounded-xl text-gray-300">
-        <h2 className="font-bold text-white mb-2">Scoring System</h2>
-        <p>Easy = +1</p>
-        <p>Medium = +3</p>
-        <p>Hard = +5</p>
       </div>
 
     </div>
