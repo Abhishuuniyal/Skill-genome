@@ -37,7 +37,7 @@ export default function DashboardHome() {
     fetchData();
   }, []);
 
-  // 🔥 HEXAGON DATA (6 SKILLS FIXED)
+  // 🔥 HEXAGON DATA (REAL)
   const radarData = userData
     ? [
         { skill: "DSA", value: userData.skills?.dsa || 0 },
@@ -45,17 +45,20 @@ export default function DashboardHome() {
         { skill: "Projects", value: userData.skills?.projects || 0 },
         { skill: "System Design", value: userData.skills?.systemDesign || 0 },
         { skill: "Problem Solving", value: userData.skills?.problemSolving || 0 },
-        { skill: "Communication", value: userData.skills?.communication || 0 }, // ✅ IMPORTANT
+        { skill: "Communication", value: userData.skills?.communication || 0 },
       ]
     : [];
 
-  const peerData = [
-    { name: "DSA", you: 62, peers: 50 },
-    { name: "Dev", you: 74, peers: 36 },
-    { name: "Projects", you: 62, peers: 30 },
-    { name: "Design", you: 61, peers: 30 },
-    { name: "Solving", you: 89, peers: 45 },
-  ];
+  // 🔥 REAL PEER COMPARISON (FIXED)
+  const peerData = userData
+    ? [
+        { name: "DSA", you: userData.skills?.dsa || 0, peers: 50 },
+        { name: "Dev", you: userData.skills?.dev || 0, peers: 60 },
+        { name: "Projects", you: userData.skills?.projects || 0, peers: 45 },
+        { name: "Design", you: userData.skills?.systemDesign || 0, peers: 50 },
+        { name: "Solving", you: userData.skills?.problemSolving || 0, peers: 55 },
+      ]
+    : [];
 
   return (
     <div className="space-y-6">
@@ -80,12 +83,7 @@ export default function DashboardHome() {
           <h3 className="font-semibold mb-4">Skill Radar</h3>
 
           <ResponsiveContainer width="100%" height={340}>
-            <RadarChart
-              cx="50%"
-              cy="50%"
-              outerRadius="75%"
-              data={radarData}
-            >
+            <RadarChart cx="50%" cy="50%" outerRadius="80%" data={radarData}>
               <PolarGrid stroke="hsl(var(--border))" />
 
               <PolarAngleAxis
@@ -100,13 +98,12 @@ export default function DashboardHome() {
                 dataKey="value"
                 stroke="#22C55E"
                 fill="#22C55E"
-                fillOpacity={0.25}
+                fillOpacity={0.3}
                 strokeWidth={2}
               />
             </RadarChart>
           </ResponsiveContainer>
         </motion.div>
-
 
         {/* 📊 BAR GRAPH */}
         <motion.div
@@ -138,7 +135,6 @@ export default function DashboardHome() {
           </ResponsiveContainer>
         </motion.div>
       </div>
-
 
       {/* 📈 SKILL PROGRESS */}
       <div className="bg-card border border-border rounded-xl p-6">
