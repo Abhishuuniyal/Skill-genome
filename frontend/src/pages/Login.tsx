@@ -3,85 +3,75 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dna } from "lucide-react";
-import { GoogleAuthProvider, signInWithPopup } from "firebase/auth";
+import {
+  GoogleAuthProvider,
+  signInWithPopup,
+  signInWithEmailAndPassword,
+} from "firebase/auth";
 import { auth } from "../lib/firebase";
 
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [errorType, setErrorType] = useState("");
 
-  // ✅ NORMAL LOGIN
+  // 🔥 EMAIL LOGIN (FIREBASE)
   const handleLogin = async (e: any) => {
     e.preventDefault();
+    setErrorType("");
 
     try {
-      const res = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          email,
-          password
-        })
-      });
+      const userCredential = await signInWithEmailAndPassword(
+        auth,
+        email,
+        password
+      );
 
-      const data = await res.json();
+      const user = userCredential.user;
 
-      if (res.ok) {
-        alert("Login successful ✅");
-        window.location.href = "/onboarding";
-      } else {
-        alert(data.message || "Login failed");
-      }
+      console.log("LOGIN SUCCESS:", user);
 
-    } catch (error) {
+      localStorage.setItem("user", JSON.stringify(user));
+
+      window.location.href = "/onboarding";
+
+    } catch (error: any) {
       console.log("LOGIN ERROR:", error);
-      alert("Server error");
+
+      // 🔥 SMART ERRORS
+      if (
+        error.code === "auth/user-not-found" ||
+        error.code === "auth/invalid-credential"
+      ) {
+        setErrorType("no-user");
+      } else if (error.code === "auth/wrong-password") {
+        setErrorType("wrong-password");
+      } else {
+        setErrorType("generic");
+      }
     }
   };
 
-  // ✅ GOOGLE LOGIN
+  // 🔥 GOOGLE LOGIN
   const handleGoogleLogin = async () => {
     const provider = new GoogleAuthProvider();
 
     provider.setCustomParameters({
-      prompt: "select_account"
+      prompt: "select_account",
     });
 
     try {
       const result = await signInWithPopup(auth, provider);
       const user = result.user;
 
-      console.log("USER:", user);
+      console.log("GOOGLE USER:", user);
 
-      // save locally
       localStorage.setItem("user", JSON.stringify(user));
 
-      // ✅ FIXED (NO localhost)
-      const res = await fetch("/api/auth/google", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          name: user.displayName,
-          email: user.email,
-          photo: user.photoURL
-        })
-      });
-
-      const data = await res.json();
-
-      if (res.ok) {
-        alert("Google login successful ✅");
-        window.location.href = "/onboarding";
-      } else {
-        alert(data.message || "Backend error");
-      }
+      window.location.href = "/onboarding";
 
     } catch (error: any) {
-      console.log("FULL GOOGLE ERROR:", error);
+      console.log("GOOGLE ERROR:", error);
       alert(error.message);
     }
   };
@@ -105,7 +95,9 @@ export default function Login() {
 
         <form className="space-y-4" onSubmit={handleLogin}>
           <div>
-            <label className="text-sm font-medium mb-1.5 block">Email</label>
+            <label className="text-sm font-medium mb-1.5 block">
+              Email
+            </label>
             <Input
               type="email"
               placeholder="you@example.com"
@@ -115,7 +107,9 @@ export default function Login() {
           </div>
 
           <div>
-            <label className="text-sm font-medium mb-1.5 block">Password</label>
+            <label className="text-sm font-medium mb-1.5 block">
+              Password
+            </label>
             <Input
               type="password"
               placeholder="••••••••"
@@ -124,8 +118,36 @@ export default function Login() {
             />
           </div>
 
+          {/* 🔥 ERROR UI */}
+          {errorType === "no-user" && (
+            <p className="text-red-500 text-sm">
+              No account found.{" "}
+              <Link
+                to="/signup"
+                className="underline text-primary font-medium"
+              >
+                Sign up first 🚀
+              </Link>
+            </p>
+          )}
+
+          {errorType === "wrong-password" && (
+            <p className="text-red-500 text-sm">
+              Incorrect password ❌
+            </p>
+          )}
+
+          {errorType === "generic" && (
+            <p className="text-red-500 text-sm">
+              Login failed. Try again.
+            </p>
+          )}
+
           <div className="flex justify-end">
-            <a href="#" className="text-xs text-primary hover:underline">
+            <a
+              href="#"
+              className="text-xs text-primary hover:underline"
+            >
               Forgot password?
             </a>
           </div>
