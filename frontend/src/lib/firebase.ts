@@ -1,28 +1,24 @@
 import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
-// optional (analytics)
 import { getAnalytics } from "firebase/analytics";
 
-// 🔥 ENV BASED CONFIG (SAFE)
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID,
-  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID,
+  apiKey: "AIzaSyBuPFvq0_Ri9wFhn9EQ-67TdUd81UNuu80",
+  authDomain: "skill-genome-2afd7.firebaseapp.com",
+  projectId: "skill-genome-2afd7",
+  storageBucket: "skill-genome-2afd7.firebasestorage.app",
+  messagingSenderId: "195694665124",
+  appId: "1:195694665124:web:aaffd5ef1e68f9bccef531",
+  measurementId: "G-KY3KTCGSM8"
 };
 
-// 🔥 INIT APP
 const app = initializeApp(firebaseConfig);
 
-// 🔥 SERVICES
 export const auth = getAuth(app);
 export const db = getFirestore(app);
 
-// 🔥 ANALYTICS (optional)
+// optional analytics (safe check)
 let analytics;
 if (typeof window !== "undefined") {
   analytics = getAnalytics(app);
