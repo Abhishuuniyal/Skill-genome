@@ -1,9 +1,10 @@
 import { Outlet, useNavigate } from "react-router-dom";
 import AppSidebar from "@/components/dashboard/AppSidebar";
 import { useTheme } from "@/lib/theme";
-import { Sun, Moon, Search, Bell } from "lucide-react";
+import { Sun, Moon, Search, Bell, LogOut } from "lucide-react";
 import { useEffect, useState } from "react";
 import { doc, getDoc } from "firebase/firestore";
+import { onAuthStateChanged, signOut } from "firebase/auth";
 import { db, auth } from "@/lib/firebase";
 
 export default function DashboardLayout() {
@@ -14,20 +15,30 @@ export default function DashboardLayout() {
   const [notifications, setNotifications] = useState<string[]>([]);
   const [showNotif, setShowNotif] = useState(false);
   const [userData, setUserData] = useState<any>(null);
+  const [authChecked, setAuthChecked] = useState(false);
+
+  // 🔒 Only logged-in users can see dashboard pages
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (!user) {
+        navigate("/login", { replace: true });
+        return;
+      }
+      setAuthChecked(true);
+      fetchData(user.uid);
+    });
+    return () => unsubscribe();
+  }, []);
 
   // 🔥 Fetch user data
-  useEffect(() => {
-    const fetchData = async () => {
-      const user = auth.currentUser;
-      if (!user) return;
-
-      const snap = await getDoc(doc(db, "users", user.uid));
+  const fetchData = async (uid: string) => {
+      const snap = await getDoc(doc(db, "users", uid));
       if (snap.exists()) {
         const data = snap.data();
         setUserData(data);
 
         // ✅ Generate notifications
-        const skills = data.skills;
+        const skills = data.skills || {};
 
         const list = [];
 
@@ -48,10 +59,14 @@ export default function DashboardLayout() {
 
         setNotifications(list);
       }
-    };
+  };
 
-    fetchData();
-  }, []);
+  // 🚪 LOGOUT
+  const handleLogout = async () => {
+    await signOut(auth);
+    localStorage.removeItem("user");
+    navigate("/login", { replace: true });
+  };
 
   // 🔥 SEARCH NAVIGATION
   const handleSearch = (value: string) => {
@@ -67,6 +82,9 @@ export default function DashboardLayout() {
     else if (v.includes("profile")) navigate("/dashboard/profile");
     else if (v.includes("setting")) navigate("/dashboard/settings");
   };
+
+  // wait until Firebase says who is logged in
+  if (!authChecked) return null;
 
   return (
     <div className="flex min-h-screen w-full">
@@ -143,6 +161,16 @@ export default function DashboardLayout() {
               className="w-full h-full object-cover"
             />
           </div>
+
+          {/* 🚪 LOGOUT */}
+          <button
+            onClick={handleLogout}
+            title="Log out"
+            className="h-9 px-3 rounded-lg flex items-center gap-2 text-sm hover:bg-muted transition-colors"
+          >
+            <LogOut className="w-4 h-4" />
+            Logout
+          </button>
         </header>
 
         {/* MAIN */}
