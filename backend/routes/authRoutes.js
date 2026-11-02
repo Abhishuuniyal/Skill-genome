@@ -83,7 +83,11 @@ router.post("/google", async (req, res) => {
 
     res.json({
       message: "Google login successful",
-      user
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email
+      }
     });
 
   } catch (error) {
@@ -131,7 +135,8 @@ router.get("/leetcode/:username", async (req, res) => {
 // leaderboard
 router.get("/leaderboard", async (req, res) => {
   try {
-    const users = await User.find().sort({ score: -1 });
+    // only public fields – never send email or password
+    const users = await User.find({}, "leetcodeId score country college").sort({ score: -1 });
     res.json(users);
   } catch (error) {
     res.status(500).json({ message: "Error" });
